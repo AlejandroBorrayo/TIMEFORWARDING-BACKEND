@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@shared/*": ["src/shared/*"],
+      "@apikey/*": ["src/apikey/*"],
+      "@middleware/*": ["src/middleware/*"],
+      "@transaction/*": ["src/transaction/*"],
+      "@user/*": ["src/user/*"],
+      "@auth/*": ["src/auth/*"],
+    }
+  },
+  "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
+}
