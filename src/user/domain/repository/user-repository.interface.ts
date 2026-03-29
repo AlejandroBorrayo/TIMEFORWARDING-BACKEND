@@ -9,7 +9,6 @@ export interface UserRepositoryInterface {
   findAll(
     pageOptions: PageOptionsDto,
     search: string,
-    company_id?: string,
   ): Promise<[UserCollectionInterface[], number]>;
   findByEmailOrId(userid?: string): Promise<UserCollectionInterface | null>;
   findByEmailOrIdValidation(

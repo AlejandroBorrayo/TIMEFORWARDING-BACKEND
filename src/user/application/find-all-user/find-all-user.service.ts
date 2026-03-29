@@ -13,7 +13,6 @@ export class FindAllUserService implements FindAllUserServiceInterface {
     _id: string,
     pagination: PageOptionsDto,
     search: string,
-    company_id?: string,
   ): Promise<PageMetaDto<UserCollectionInterface>> {
     const user = await this.userRepository.findByEmailOrId(_id);
     if (user?.role !== "admin") {
@@ -23,7 +22,6 @@ export class FindAllUserService implements FindAllUserServiceInterface {
     const [entities, total] = await this.userRepository.findAll(
       pagination,
       search,
-      company_id,
     );
 
     return new PageMetaDto<UserCollectionInterface>({

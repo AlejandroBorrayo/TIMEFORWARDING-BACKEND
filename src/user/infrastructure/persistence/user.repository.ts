@@ -17,14 +17,10 @@ export class MongoUserRepository implements UserRepositoryInterface {
   async findAll(
     pageOptions: PageOptionsDto,
     search: string,
-    company_id?: string,
   ): Promise<[UserCollectionInterface[], number]> {
     // Construimos el filtro base
     const filter: any = { deleted: false };
 
-    if (company_id?.trim()) {
-      filter.company_id = new Types.ObjectId(company_id.trim());
-    }
 
     if (search && search.trim() !== "") {
       const regex = new RegExp(search.trim(), "i"); // i = case insensitive
@@ -98,9 +94,6 @@ export class MongoUserRepository implements UserRepositoryInterface {
       updated_at: new Date(),
       deleted: false,
     };
-    if (user.company_id) {
-      payload.company_id = new Types.ObjectId(user.company_id);
-    }
     const newUser = new UserModel(payload);
     const saved = await newUser.save();
     return saved.toObject<UserCollectionInterface>();
