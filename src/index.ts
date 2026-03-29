@@ -1,3 +1,4 @@
+import "./suppress-node-deprecations";
 import express from "express";
 import bodyParser from "body-parser";
 import { connectMongo } from "./database/mongo";
