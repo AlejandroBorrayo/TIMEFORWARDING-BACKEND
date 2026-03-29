@@ -9,6 +9,9 @@ export interface FindAllFolioServiceInterface {
     no_quote?: number;
     customer?: string;
     seller_userid?: string;
+    company_id?: string;
+    seller_name?: string;
+    supplier?: string;
     start_date?: string | Date;
     end_date?: string | Date;
   }): Promise<PageMetaDto<FolioCollectionInterface>>;

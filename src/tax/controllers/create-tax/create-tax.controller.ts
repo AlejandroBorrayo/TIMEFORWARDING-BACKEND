@@ -8,7 +8,8 @@ export function createTaxController(service: TaxServiceInterface) {
     run: async (req: Request, res: Response) => {
       try {
         // Obtenemos al usuario decodificado (inyectado por middleware de auth)
-        const dto: { name: string,amount:number } = req.body;
+        const dto: { name: string; amount: number; company_id: string } =
+          req.body;
 
         // Ejecutamos el caso de uso
         const note: TaxCollectionInterface = await service.run(dto);

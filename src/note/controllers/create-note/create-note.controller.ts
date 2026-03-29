@@ -8,10 +8,9 @@ export function createNoteController(service: NoteServiceInterface) {
     run: async (req: Request, res: Response) => {
       try {
         // Obtenemos al usuario decodificado (inyectado por middleware de auth)
-        const dto: { note: string } = req.body;
+        const dto: { note: string; company_id: string } = req.body;
 
-        // Ejecutamos el caso de uso
-        const note: NoteCollectionInterface = await service.run(dto?.note);
+        const note: NoteCollectionInterface = await service.run(dto);
 
         // Respuesta 201 Created
         res.status(201).json(note);

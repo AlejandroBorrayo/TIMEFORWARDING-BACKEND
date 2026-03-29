@@ -6,9 +6,15 @@ import type { PageOptionsDto } from "../../../shared/domain/pagination/dto/page-
 import { Types } from "mongoose";
 
 export class MongoTaxRepository implements TaxRepositoryInterface {
-  async create(tax: {name:string,amount:number}): Promise<TaxCollectionInterface> {
+  async create(tax: {
+    name: string;
+    amount: number;
+    company_id: string;
+  }): Promise<TaxCollectionInterface> {
     const newAddress = new TaxModel({
-      ...tax,
+      name: tax.name,
+      amount: tax.amount,
+      company_id: new Types.ObjectId(tax.company_id),
       created_at: new Date(),
       updated_at: new Date(),
       deleted: false, // aseguramos que se cree como no eliminado
@@ -19,8 +25,12 @@ export class MongoTaxRepository implements TaxRepositoryInterface {
 
   async findAll(
     pageOptions: PageOptionsDto,
+    company_id?: string,
   ): Promise<[TaxCollectionInterface[], number]> {
     const where: any = { deleted: false };
+    if (company_id?.trim()) {
+      where.company_id = new Types.ObjectId(company_id.trim());
+    }
 
     const [items, total] = await Promise.all([
       TaxModel.find(where)

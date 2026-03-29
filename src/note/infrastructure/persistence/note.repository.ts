@@ -6,9 +6,13 @@ import type { PageOptionsDto } from "../../../shared/domain/pagination/dto/page-
 import { Types } from "mongoose";
 
 export class MongoNoteRepository implements NoteRepositoryInterface {
-  async create(note: string): Promise<NoteCollectionInterface> {
+  async create(payload: {
+    note: string;
+    company_id: string;
+  }): Promise<NoteCollectionInterface> {
     const newAddress = new NoteModel({
-      note,
+      note: payload.note,
+      company_id: new Types.ObjectId(payload.company_id),
       created_at: new Date(),
       updated_at: new Date(),
       deleted: false, // aseguramos que se cree como no eliminado
@@ -19,8 +23,12 @@ export class MongoNoteRepository implements NoteRepositoryInterface {
 
   async findAll(
     pageOptions: PageOptionsDto,
+    company_id?: string,
   ): Promise<[NoteCollectionInterface[], number]> {
     const where: any = { deleted: false };
+    if (company_id?.trim()) {
+      where.company_id = new Types.ObjectId(company_id.trim());
+    }
 
     const [items, total] = await Promise.all([
       NoteModel.find(where)

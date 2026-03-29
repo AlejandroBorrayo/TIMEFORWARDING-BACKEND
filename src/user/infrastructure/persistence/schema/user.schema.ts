@@ -1,4 +1,4 @@
-import { Schema, model, Document } from "mongoose";
+import { Schema, model, Document, Types } from "mongoose";
 import bcrypt from "bcrypt";
 
 export interface UserDocument extends Document {
@@ -9,6 +9,7 @@ export interface UserDocument extends Document {
   role: string;
   commission: number;
   type_commission: "percentage" | "amount";
+  company_id?: Types.ObjectId;
   deleted: boolean;
   created_at: Date;
   updated_at: Date;
@@ -26,6 +27,11 @@ const UserSchema = new Schema<UserDocument>(
       type: String,
       enum: ["percentage", "amount"],
       default: "percentage",
+    },
+    company_id: {
+      type: Schema.Types.ObjectId,
+      ref: "Company",
+      index: true,
     },
     deleted: { type: Boolean, default: false },
   },

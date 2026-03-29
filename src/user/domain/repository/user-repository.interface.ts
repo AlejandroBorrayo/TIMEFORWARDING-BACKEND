@@ -8,7 +8,8 @@ export interface UserRepositoryInterface {
   exists(email: string): Promise<boolean>;
   findAll(
     pageOptions: PageOptionsDto,
-    search:string
+    search: string,
+    company_id?: string,
   ): Promise<[UserCollectionInterface[], number]>;
   findByEmailOrId(userid?: string): Promise<UserCollectionInterface | null>;
   findByEmailOrIdValidation(

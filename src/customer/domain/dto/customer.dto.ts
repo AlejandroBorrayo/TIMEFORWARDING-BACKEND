@@ -30,6 +30,9 @@ export class CustomerDto {
   @IsString()
   creator_userid!: string;
 
+  @IsString()
+  company_id!: string;
+
   @IsBoolean()
   deleted!: boolean;
 

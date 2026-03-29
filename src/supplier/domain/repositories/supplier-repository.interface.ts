@@ -8,6 +8,7 @@ export interface SupplierRepositoryInterface {
   findAll(
     pageOptions: PageOptionsDto,
     search?: string,
+    company_id?: string,
   ): Promise<[SupplierCollectionInterface[], number]>;
   findOne(_id?: string): Promise<SupplierCollectionInterface | null>;
   

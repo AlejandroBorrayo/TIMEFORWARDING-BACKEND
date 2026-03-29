@@ -16,12 +16,14 @@ export class FindAllCustomerService implements FindAllCustomerServiceInterface {
 
   async run(
     pagination: PageOptionsDto,
-    search?: string
+    search?: string,
+    company_id?: string,
   ): Promise<PageMetaDto<CustomerCollectionInterface>> {
     try {
       const [entities, total] = await this.addressRepository.findAll(
         pagination,
-        search
+        search,
+        company_id,
       );
 
       return new PageMetaDto<CustomerCollectionInterface>({

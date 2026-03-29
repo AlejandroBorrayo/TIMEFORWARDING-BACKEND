@@ -11,7 +11,11 @@ export class CreateTaxService implements TaxServiceInterface {
     this.taxRepository = taxRepository;
   }
 
-  async run(tax:{name:string,amount:number}): Promise<any> {
+  async run(tax: {
+    name: string;
+    amount: number;
+    company_id: string;
+  }): Promise<any> {
     try {
       return await this.taxRepository.create(tax);
     } catch (err) {

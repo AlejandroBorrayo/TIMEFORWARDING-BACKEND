@@ -7,6 +7,7 @@ import { PageMetaDto } from "../../../shared/domain/pagination/dto/page-meta.dto
 export interface FindAllCustomerServiceInterface {
   run(
     pagination: PageOptionsDto,
-    search?: string
+    search?: string,
+    company_id?: string,
   ): Promise<PageMetaDto<CustomerCollectionInterface>>;
 }

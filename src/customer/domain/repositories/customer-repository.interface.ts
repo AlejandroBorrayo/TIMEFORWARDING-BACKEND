@@ -8,6 +8,7 @@ export interface CustomerRepositoryInterface {
   findAll(
     pageOptions: PageOptionsDto,
     search?: string,
+    company_id?: string,
   ): Promise<[CustomerCollectionInterface[], number]>;
   findOne(_id?: string): Promise<CustomerCollectionInterface | null>;
   

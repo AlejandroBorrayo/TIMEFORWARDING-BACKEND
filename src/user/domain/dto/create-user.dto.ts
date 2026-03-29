@@ -45,4 +45,8 @@ export class CreateUserDto {
     message: "Type commission must be 'percentage' or 'amount'",
   })
   readonly type_commission?: "percentage" | "amount";
+
+  @IsOptional()
+  @IsString()
+  readonly company_id?: string;
 }

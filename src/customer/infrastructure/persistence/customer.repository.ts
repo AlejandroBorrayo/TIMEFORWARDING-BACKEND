@@ -11,6 +11,7 @@ export class MongoCustomerRepository implements CustomerRepositoryInterface {
     const newAddress = new CustomerModel({
       ...customer,
       creator_userid: new Types.ObjectId(customer.creator_userid),
+      company_id: new Types.ObjectId(customer.company_id),
       created_at: new Date(),
       updated_at: new Date(),
       deleted: false, // aseguramos que se cree como no eliminado
@@ -21,9 +22,13 @@ export class MongoCustomerRepository implements CustomerRepositoryInterface {
 
   async findAll(
     pageOptions: PageOptionsDto,
-    search?: string
+    search?: string,
+    company_id?: string,
   ): Promise<[CustomerCollectionInterface[], number]> {
     const where: any = { deleted: false };
+    if (company_id?.trim()) {
+      where.company_id = new Types.ObjectId(company_id.trim());
+    }
     if (search) {
       const regex = new RegExp(search, "i"); // case-insensitive
       where.$or = [

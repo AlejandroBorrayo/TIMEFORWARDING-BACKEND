@@ -1,4 +1,5 @@
 import fetch from "node-fetch";
+import { Types } from "mongoose";
 import type { FolioRepositoryInterface } from "../../domain/repositories/folio-repository.interface";
 import type { SendFolioReportCsvServiceInterface } from "../../domain/services/send-folio-report-csv-service.interface";
 import { UserModel } from "../../../user/infrastructure/persistence/schema/user.schema";
@@ -10,6 +11,7 @@ type SendFolioReportCsvDto = {
   no_quote?: number;
   customer?: string;
   seller_userid?: string;
+  company_id?: string;
   start_date?: string | Date;
   end_date?: string | Date;
   supplier?: string;
@@ -45,12 +47,13 @@ export class SendFolioReportCsvService
       no_quote: data.no_quote,
       customer: data.customer,
       seller_userid: data.seller_userid,
+      company_id: data.company_id,
       start_date: data.start_date,
       end_date: data.end_date,
       supplier: data.supplier,
     });
 
-    const sellers = await this.getSellers();
+    const sellers = await this.getSellers(data.company_id);
     const csv = this.buildCsv(rows, sellers);
     await this.sendCsvByEmail(data.email, csv);
 
@@ -61,7 +64,7 @@ export class SendFolioReportCsvService
     };
   }
 
-  private async getSellers(): Promise<
+  private async getSellers(company_id?: string): Promise<
     Array<{
       _id: string;
       full_name: string;
@@ -69,11 +72,15 @@ export class SendFolioReportCsvService
       type_commission: "percentage" | "amount";
     }>
   > {
+    const filter: Record<string, unknown> = {
+      deleted: false,
+      role: { $regex: "^seller$", $options: "i" },
+    };
+    if (company_id?.trim()) {
+      filter.company_id = new Types.ObjectId(company_id.trim());
+    }
     const sellers = await UserModel.find(
-      {
-        deleted: false,
-        role: { $regex: "^seller$", $options: "i" },
-      },
+      filter,
       {
         _id: 1,
         full_name: 1,

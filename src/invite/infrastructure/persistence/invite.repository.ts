@@ -3,7 +3,6 @@ import { InviteModel } from "./schema/invite.schema";
 import type { InviteRepositoryInterface } from "../../domain/repositories/invite-repository.interface";
 import type { InviteCollectionInterface } from "../../domain/collection/invite.collection.interface";
 import { Types } from "mongoose";
-import { CreateInviteDto } from "../../domain/dto/create-invite.dto";
 
 export class MongoInviteRepository implements InviteRepositoryInterface {
   async updatePartial(
@@ -11,7 +10,10 @@ export class MongoInviteRepository implements InviteRepositoryInterface {
     invite: Partial<InviteCollectionInterface>
   ): Promise<InviteCollectionInterface> {
     await InviteModel.updateOne(
-      { _id: new Types.ObjectId(existingInvite._id), deleted: false },
+      {
+        _id: new Types.ObjectId(existingInvite._id!.toString()),
+        deleted: false,
+      },
       {
         $set: {
           ...invite,
@@ -30,10 +32,13 @@ export class MongoInviteRepository implements InviteRepositoryInterface {
   }
 
   async create(
-    data: InviteCollectionInterface
+    data: Partial<InviteCollectionInterface>
   ): Promise<InviteCollectionInterface> {
     const newInvite = new InviteModel({
       ...data,
+      company_id: data.company_id
+        ? new Types.ObjectId(data.company_id.toString())
+        : undefined,
       created_at: new Date(),
       updated_at: new Date(),
       deleted: false,

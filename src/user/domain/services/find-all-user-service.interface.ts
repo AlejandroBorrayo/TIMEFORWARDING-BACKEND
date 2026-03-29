@@ -8,5 +8,7 @@ export interface FindAllUserServiceInterface {
   run(
     userid: string,
     pageOptionsDto: PageOptionsDto,
-    search:string): Promise<PageMetaDto<UserCollectionInterface>>;
+    search: string,
+    company_id?: string,
+  ): Promise<PageMetaDto<UserCollectionInterface>>;
 }

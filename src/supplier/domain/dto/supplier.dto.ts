@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsEmail } from "class-validator";
+import { IsString, IsOptional, IsEmail } from "class-validator";
 
 export class SupplierDto {
   @IsString()
@@ -11,6 +11,9 @@ export class SupplierDto {
   @IsOptional()
   @IsString()
   readonly phone?: string;
+
+  @IsString()
+  readonly company_id!: string;
 }
 
 

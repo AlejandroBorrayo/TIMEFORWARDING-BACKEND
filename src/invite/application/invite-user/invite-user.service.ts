@@ -52,7 +52,10 @@ export class InviteUserService implements InviteUserServiceInterface {
     try {
       // Crear nuevo usuario usando el repositorio
       const invite = await this.inviteRepository.create({
-        ...payload,
+        email: payload.email,
+        name: payload.name,
+        role: payload.role,
+        company_id: payload.company_id,
         token,
         status: "pending",
       });

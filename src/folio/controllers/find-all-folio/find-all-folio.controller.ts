@@ -16,10 +16,11 @@ export function findAllFolioController(
           no_quote?: number;
           customer?: string;
           seller_userid?: string;
+          company_id?: string;
           seller_name?: string;
           start_date?: string | Date;
           end_date?: string | Date;
-          supplier?:string
+          supplier?: string;
         } = req.body;
 
         // Ejecutamos el caso de uso

@@ -18,6 +18,7 @@ export interface FolioRepositoryInterface {
     folio?: string;
     customer?: string;
     seller_userid?: string;
+    company_id?: string;
     start_date?: string | Date;
     end_date?: string | Date;
     supplier?: string;
@@ -28,6 +29,7 @@ export interface FolioRepositoryInterface {
     no_quote?: number;
     customer?: string;
     seller_userid?: string;
+    company_id?: string;
     start_date?: string | Date;
     end_date?: string | Date;
     supplier?: string;

@@ -7,6 +7,7 @@ export interface UserCollectionInterface {
   readonly role: string;
   readonly commission: number;
   readonly type_commission: "percentage" | "amount";
+  readonly company_id?: string;
   readonly deleted: boolean;
   readonly created_at: Date;
   readonly updated_at: Date;

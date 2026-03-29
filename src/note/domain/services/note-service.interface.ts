@@ -1,5 +1,5 @@
 import { NoteCollectionInterface } from "../collection/note.collection.interface";
 
 export interface NoteServiceInterface {
-  run(note: string): Promise<NoteCollectionInterface>;
+  run(payload: { note: string; company_id: string }): Promise<NoteCollectionInterface>;
 }

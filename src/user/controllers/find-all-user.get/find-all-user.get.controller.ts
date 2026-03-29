@@ -12,9 +12,19 @@ export function findAllUserController(service: FindAllUserServiceInterface) {
           userid,
           pagination,
           search,
-        }: { userid: string; pagination: PageOptionsDto; search: string } =
-          req.body;
-        const users = await service.run(userid, pagination, search);
+          company_id,
+        }: {
+          userid: string;
+          pagination: PageOptionsDto;
+          search: string;
+          company_id?: string;
+        } = req.body;
+        const users = await service.run(
+          userid,
+          pagination,
+          search,
+          company_id,
+        );
 
         res.status(200).json(users);
       } catch (error: any) {

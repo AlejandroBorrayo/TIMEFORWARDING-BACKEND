@@ -13,6 +13,7 @@ export interface CustomerDocument extends Document {
   contacts: ContactDocument[];
   company: string;
   company_rfc?: string;
+  company_id?: Types.ObjectId;
   creator_userid: Types.ObjectId;
   deleted: boolean;
   created_at?: Date;
@@ -38,6 +39,11 @@ const CustomerSchema = new Schema<CustomerDocument>(
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
+    },
+    company_id: {
+      type: Schema.Types.ObjectId,
+      ref: "Company",
+      index: true,
     },
     deleted: { type: Boolean, default: false },
   },

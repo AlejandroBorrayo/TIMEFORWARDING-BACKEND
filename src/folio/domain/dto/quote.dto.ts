@@ -47,6 +47,9 @@ export class QuoteDto {
   @IsOptional()
   seller_userid?: string;
 
+  @IsString()
+  @IsNotEmpty()
+  company_id!: string;
 
   @IsString()
   @IsNotEmpty()

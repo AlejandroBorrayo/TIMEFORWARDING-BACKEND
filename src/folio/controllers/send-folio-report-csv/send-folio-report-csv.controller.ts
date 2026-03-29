@@ -14,6 +14,7 @@ export function sendFolioReportCsvController(
           no_quote?: number;
           customer?: string;
           seller_userid?: string;
+          company_id?: string;
           start_date?: string | Date;
           end_date?: string | Date;
           supplier?: string;

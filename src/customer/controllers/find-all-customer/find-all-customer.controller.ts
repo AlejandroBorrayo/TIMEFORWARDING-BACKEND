@@ -9,12 +9,16 @@ export function findAllCustomerController(
     run: async (req: Request, res: Response) => {
       try {
         const dto: {
-          pagination: { page: number; perpage: number },
-          search:string
+          pagination: { page: number; perpage: number };
+          search?: string;
+          company_id?: string;
         } = req.body;
 
-        // Ejecutamos el caso de uso
-        const transaction = await service.run( dto?.pagination, dto?.search);
+        const transaction = await service.run(
+          dto?.pagination,
+          dto?.search,
+          dto?.company_id,
+        );
 
         // Respuesta 201 Created
         res.status(201).json(transaction);

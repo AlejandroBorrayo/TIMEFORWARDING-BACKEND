@@ -3,6 +3,7 @@ import { Schema, model, Types } from "mongoose";
 export interface FolioCollectionInterface {
   _id?: string;
   seller_userid: Types.ObjectId;
+  company_id?: Types.ObjectId | string;
   folio: string;
   service_cost: ServiceCostInterface[];
   deleted?: boolean;

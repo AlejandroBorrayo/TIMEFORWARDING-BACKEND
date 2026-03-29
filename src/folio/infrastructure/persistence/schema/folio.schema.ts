@@ -91,6 +91,7 @@ export interface ServiceCostInterface {
 
 export interface FolioDocument extends Document {
   seller_userid: Types.ObjectId;
+  company_id?: Types.ObjectId;
   folio: string;
   service_cost: ServiceCostInterface[];
   deleted: boolean;
@@ -232,6 +233,11 @@ const FolioSchema = new Schema<FolioDocument>(
       type: String,
       required: true,
       unique: true,
+    },
+    company_id: {
+      type: Schema.Types.ObjectId,
+      ref: "Company",
+      index: true,
     },
     service_cost: {
       type: [ServiceCostSchema],

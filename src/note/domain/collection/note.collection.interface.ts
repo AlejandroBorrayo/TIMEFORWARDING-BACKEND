@@ -4,7 +4,8 @@ import { Types } from "mongoose";
 
 export interface NoteCollectionInterface {
   readonly _id?: Types.ObjectId;
-  readonly note:string
+  readonly note: string;
+  readonly company_id?: Types.ObjectId | string;
   readonly deleted: boolean;
   readonly created_at?: Date;
   readonly updated_at?: Date;

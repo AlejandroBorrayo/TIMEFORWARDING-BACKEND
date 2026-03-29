@@ -10,6 +10,7 @@ export class MongoSupplierRepository implements SupplierRepositoryInterface {
   async create(supplier: SupplierDto): Promise<SupplierCollectionInterface> {
     const newAddress = new SupplierModel({
       ...supplier,
+      company_id: new Types.ObjectId(supplier.company_id),
       created_at: new Date(),
       updated_at: new Date(),
       deleted: false, // aseguramos que se cree como no eliminado
@@ -20,9 +21,13 @@ export class MongoSupplierRepository implements SupplierRepositoryInterface {
 
   async findAll(
     pageOptions: PageOptionsDto,
-    search?: string
+    search?: string,
+    company_id?: string,
   ): Promise<[SupplierCollectionInterface[], number]> {
     const where: any = { deleted: false };
+    if (company_id?.trim()) {
+      where.company_id = new Types.ObjectId(company_id.trim());
+    }
     if (search) {
       const regex = new RegExp(search, "i"); // case-insensitive
       where.$or = [

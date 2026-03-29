@@ -82,6 +82,15 @@ export class CreateQuoteService implements QuoteServiceInterface {
       throw new Error("Folio not found");
     }
 
+    const folioCompanyId = folio.company_id?.toString?.();
+    if (
+      folioCompanyId &&
+      QuoteDto.company_id &&
+      folioCompanyId !== QuoteDto.company_id
+    ) {
+      throw new Error("Folio does not belong to this company");
+    }
+
     const service_cost = folio?.service_cost.find(
       (costs) => costs?._id?.toString() === QuoteDto?.service_cost
     );
@@ -531,12 +540,19 @@ export class CreateQuoteService implements QuoteServiceInterface {
 
           doc.font("Helvetica").fontSize(8);
 
+          const noteTextOptions = {
+            width: tableWidth,
+            lineGap: 2,
+          } as const;
+          const noteParagraphGap = 10;
+
           data.notes.forEach((note) => {
-            doc.text(note, marginLeft, y, {
-              width: tableWidth,
-              lineGap: 2,
-            });
-            y += 12;
+            const trimmed = note?.trim();
+            if (!trimmed) return;
+
+            const blockHeight = doc.heightOfString(trimmed, noteTextOptions);
+            doc.text(trimmed, marginLeft, y, noteTextOptions);
+            y += blockHeight + noteParagraphGap;
           });
         }
 

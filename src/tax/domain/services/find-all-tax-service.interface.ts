@@ -7,6 +7,6 @@ import { PageMetaDto } from "../../../shared/domain/pagination/dto/page-meta.dto
 export interface FindAllTaxServiceInterface {
   run(
     pagination: PageOptionsDto,
-    search?: string
+    company_id?: string,
   ): Promise<PageMetaDto<TaxCollectionInterface>>;
 }

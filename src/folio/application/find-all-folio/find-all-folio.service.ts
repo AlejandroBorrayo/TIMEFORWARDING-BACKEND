@@ -11,13 +11,14 @@ export class FindAllFolioService implements FindAllFolioServiceInterface {
     this.FolioRepository = FolioRepository;
   }
 
-  async run(data:{
+  async run(data: {
     pagination: { page: number; perpage: number };
     folio?: string;
     no_quote?: number;
     seller_name?: string;
     customer?: string;
     seller_userid?: string;
+    company_id?: string;
     start_date?: string | Date;
     end_date?: string | Date;
     supplier?: string;

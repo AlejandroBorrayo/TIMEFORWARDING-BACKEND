@@ -13,6 +13,7 @@ import { MongoSupplierRepository } from "./supplier/infrastructure/persistence/s
 import { MongoInviteRepository } from "./invite/infrastructure/persistence/invite.repository";
 import { MongoNoteRepository } from "./note/infrastructure/persistence/note.repository";
 import { MongoTaxRepository } from "./tax/infrastructure/persistence/tax.repository";
+import { MongoCompanyRepository } from "./company/infrastructure/persistence/company.repository";
 
 // Servicios
 import { FindNoteService } from "./note/application/find-note/find-note.service";
@@ -37,6 +38,7 @@ import { ResetPasswordService } from "./auth/application/reset-password/reset-pa
 
 //FOLIO
 import { CreateFolioService } from "./folio/application/create-folio/create-folio.service";
+import { CreateFolioWithoutCostService } from "./folio/application/create-folio-without-cost/create-folio-without-cost.service";
 import { CreateQuoteService } from "./folio/application/create-quote/create-quote.service";
 import { FindFolioService } from "./folio/application/find-folio/find-folio.service";
 import { FindAllFolioService } from "./folio/application/find-all-folio/find-all-folio.service";
@@ -69,6 +71,11 @@ import { InviteUserService } from "./invite/application/invite-user/invite-user.
 import { InviteAcceptService } from "./invite/application/invite-accept/invite-accept.service";
 import { FindInviteService } from "./invite/application/find-invite/find-invite.service";
 
+import { CreateCompanyService } from "./company/application/create-company/create-company.service";
+import { FindAllCompanyService } from "./company/application/find-all-company/find-all-company.service";
+import { FindCompanyService } from "./company/application/find-company/find-company.service";
+import { UpdateCompanyService } from "./company/application/update-company/update-company.service";
+
 // CONTROLLERS
 
 //USER
@@ -90,6 +97,7 @@ import { resetPasswordController } from "./auth/controllers/reset-password/reset
 //FOLIO
 import { findAllFolioController } from "./folio/controllers/find-all-folio/find-all-folio.controller";
 import { createFolioController } from "./folio/controllers/create-folio/create-folio.controller";
+import { createFolioWithoutCostController } from "./folio/controllers/create-folio-without-cost/create-folio-without-cost.controller";
 import { findFolioController } from "./folio/controllers/find-folio/find-folio.controller";
 import { createQuoteController } from "./folio/controllers/create-quote/create-quote.controller";
 import { setQuoteActiveController } from "./folio/controllers/set-quote-active/set-quote-active.controller";
@@ -128,6 +136,11 @@ import { findAllTaxController } from "./tax/controllers/find-all-tax/find-all-ta
 import { findTaxController } from "./tax/controllers/find-tax/find-tax.controller";
 import { updateTaxController } from "./tax/controllers/update-tax/update-tax.controller";
 
+import { createCompanyController } from "./company/controllers/create-company/create-company.controller";
+import { findAllCompanyController } from "./company/controllers/find-all-company/find-all-company.controller";
+import { findCompanyController } from "./company/controllers/find-company/find-company.controller";
+import { updateCompanyController } from "./company/controllers/update-company/update-company.controller";
+
 // Config
 import { MONGO, SECRET, APP } from "./config";
 async function bootstrap() {
@@ -150,6 +163,7 @@ async function bootstrap() {
   // ==========================
   const userRepo = new MongoUserRepository();
   const apikeyRepo = new MongoApikeyRepository();
+  const companyRepo = new MongoCompanyRepository();
   const FolioRepo = new MongoFolioRepository();
   const customerRepo = new MongoCustomerRepository();
   const supplierRepo = new MongoSupplierRepository();
@@ -170,6 +184,11 @@ async function bootstrap() {
   const findTaxService = new FindTaxService(taxRepo);
   const findAllTaxService = new FindAllTaxService(taxRepo);
 
+  const createCompanyService = new CreateCompanyService(companyRepo);
+  const findAllCompanyService = new FindAllCompanyService(companyRepo);
+  const findCompanyService = new FindCompanyService(companyRepo);
+  const updateCompanyService = new UpdateCompanyService(companyRepo);
+
   const createnoteService = new CreateNoteService(noteRepo);
   const updateNoteService = new UpdateNoteService(noteRepo);
   const findNoteService = new FindNoteService(noteRepo);
@@ -185,6 +204,10 @@ async function bootstrap() {
     userRepo,
     FolioRepo,
     supplierRepo
+  );
+  const createFolioWithoutCostService = new CreateFolioWithoutCostService(
+    userRepo,
+    FolioRepo,
   );
   const createQuoteService = new CreateQuoteService(
     userRepo,
@@ -273,6 +296,9 @@ async function bootstrap() {
     findSuppliersByFolioService
   );
   const createFolio = createFolioController(createFolioService);
+  const createFolioWithoutCost = createFolioWithoutCostController(
+    createFolioWithoutCostService,
+  );
   const createQuote = createQuoteController(createQuoteService);
   const findFolio = findFolioController(findFolioService);
   const setQuoteActive = setQuoteActiveController(setQuoteActiveService);
@@ -325,9 +351,19 @@ async function bootstrap() {
   const createTax = createTaxController(createTaxService);
   const updateTax = updateTaxController(updateTaxService);
 
+  const createCompany = createCompanyController(createCompanyService);
+  const findAllCompany = findAllCompanyController(findAllCompanyService);
+  const findCompany = findCompanyController(findCompanyService);
+  const updateCompany = updateCompanyController(updateCompanyService);
+
   // ==========================
   // Rutas
   // ==========================
+  app.post("/company", createCompany.run);
+  app.post("/company/all", findAllCompany.run);
+  app.put("/company/:id", updateCompany.run);
+  app.get("/company/:id", findCompany.run);
+
   app.post("/user", createUser.run);
   app.put("/user/:id", updateUser.run);
   app.get("/user/:userid", findUser.run);
@@ -341,6 +377,7 @@ async function bootstrap() {
   app.post("/folio/all", findAllFolio.run);
   app.post("/folio/report/csv", sendFolioReportCsv.run);
   app.post("/folio", createFolio.run);
+  app.post("/folio/sin-costo", createFolioWithoutCost.run);
   app.get("/folio/:id", findFolio.run);
   app.put("/folio/service-cost-active", setServiceCostActive.run);
   app.put("/folio/quote-active", setQuoteActive.run);

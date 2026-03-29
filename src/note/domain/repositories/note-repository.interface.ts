@@ -2,9 +2,13 @@ import type { PageOptionsDto } from "../../../shared/domain/pagination/page-meta
 import { NoteCollectionInterface } from "../collection/note.collection.interface";
 
 export interface NoteRepositoryInterface {
-  create(note: string): Promise<NoteCollectionInterface>;
+  create(payload: {
+    note: string;
+    company_id: string;
+  }): Promise<NoteCollectionInterface>;
   findAll(
     pageOptions: PageOptionsDto,
+    company_id?: string,
   ): Promise<[NoteCollectionInterface[], number]>;
   findOne(_id?: string): Promise<NoteCollectionInterface | null>;
 

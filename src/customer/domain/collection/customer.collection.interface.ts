@@ -15,6 +15,7 @@ export interface CustomerCollectionInterface {
   readonly contacts: ContactInterface[];
   readonly company: string;
   readonly company_rfc?: string;
+  readonly company_id?: Types.ObjectId | string;
   readonly creator_userid: Types.ObjectId;
   readonly deleted: boolean;
   readonly created_at?: Date;

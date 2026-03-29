@@ -43,6 +43,10 @@ export class FolioDto {
 
   @IsString()
   @IsNotEmpty()
+  company_id!: string;
+
+  @IsString()
+  @IsNotEmpty()
   currency!: string;
 
   @ValidateNested({ each: true })

@@ -15,10 +15,12 @@ export class FindAllTaxService implements FindAllTaxServiceInterface {
 
   async run(
     pagination: PageOptionsDto,
+    company_id?: string,
   ): Promise<PageMetaDto<TaxCollectionInterface>> {
     try {
       const [entities, total] = await this.taxRepository.findAll(
         pagination,
+        company_id,
       );
 
       return new PageMetaDto<TaxCollectionInterface>({

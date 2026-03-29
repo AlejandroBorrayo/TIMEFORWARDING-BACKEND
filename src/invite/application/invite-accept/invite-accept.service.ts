@@ -29,7 +29,11 @@ export class InviteAcceptService implements InviteAcceptServiceInterface {
         throw error;
       }
 
-      const userCreated = await this.createUserService.run(user);
+      const inviteCompanyId = findInvite.company_id?.toString?.();
+      const userCreated = await this.createUserService.run({
+        ...user,
+        ...(inviteCompanyId ? { company_id: inviteCompanyId } : {}),
+      });
 
        await this.inviteRepository.updatePartial(findInvite, {
         status: "accepted",

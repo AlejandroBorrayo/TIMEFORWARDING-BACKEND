@@ -13,7 +13,22 @@ import {
   FolioCollectionInterface,
 } from "../../domain/collection/folio.collection.interface";
 import { ObjectId } from "mongodb";
+import * as fs from "fs";
+
 const apikey = "429784hjyebp1hcjg0pst";
+
+function isMongoObjectIdHex24(value: string | undefined): boolean {
+  return typeof value === "string" && /^[a-fA-F0-9]{24}$/.test(value.trim());
+}
+
+function parseCompanyObjectId(company_id: string): Types.ObjectId {
+  const v = company_id?.trim();
+  if (!v) throw new Error("company_id is required");
+  if (!isMongoObjectIdHex24(v)) {
+    throw new Error("company_id is not a valid MongoDB id");
+  }
+  return new Types.ObjectId(v);
+}
 
 interface PDFInterface {
   folio: string;
@@ -44,6 +59,10 @@ export class CreateFolioService implements FolioServiceInterface {
   }
 
   async run(FolioDto: FolioDto): Promise<FolioCollectionInterface | null> {
+    if (!FolioDto?.items?.length) {
+      throw new Error("At least one item is required");
+    }
+
     let subtotal = 0;
     let total_tax = 0;
     const taxesMap = new Map<string, number>();
@@ -80,6 +99,14 @@ export class CreateFolioService implements FolioServiceInterface {
     }));
     const total = subtotal + total_tax;
 
+    let companyObjectId: Types.ObjectId;
+    try {
+      companyObjectId = parseCompanyObjectId(FolioDto.company_id);
+    } catch (e: any) {
+      console.error("[CreateFolioService] company_id", e?.message);
+      throw e;
+    }
+
     const seller_user = await this.userRepository.findByEmailOrId(
       FolioDto?.seller_userid
     );
@@ -92,6 +119,14 @@ export class CreateFolioService implements FolioServiceInterface {
       if (!current_folio?._id) {
         throw new Error("Folio not found");
       }
+      const existingCompany = current_folio.company_id?.toString?.();
+      if (
+        existingCompany &&
+        FolioDto.company_id &&
+        existingCompany !== FolioDto.company_id
+      ) {
+        throw new Error("Folio does not belong to this company");
+      }
       folio = current_folio.folio;
       no_service_cost = `${current_folio.folio}-C${
         (current_folio.service_cost?.length ?? 0) + 1
@@ -99,13 +134,23 @@ export class CreateFolioService implements FolioServiceInterface {
     }
 
     let items: ItemInterface[] = [];
-    for (const item of FolioDto.items) {
+    for (let i = 0; i < FolioDto.items.length; i++) {
+      const item = FolioDto.items[i];
       const rowSubtotal = (item?.amount ?? 0) * (item?.quantity ?? 0);
       const tax = rowSubtotal * ((item?.tax?.amount ?? 0) / 100);
       const total = rowSubtotal + tax;
 
-      const supplier = await this.supplierRepository.findOne(item?.supplier_id);
-      if (!supplier?._id) throw new Error("Supplier not found");
+      const sid = item?.supplier_id?.trim();
+      if (!sid || !isMongoObjectIdHex24(sid)) {
+        throw new Error(
+          `Item ${i + 1}: supplier_id must be a valid MongoDB id (24 hex chars)`
+        );
+      }
+
+      const supplier = await this.supplierRepository.findOne(sid);
+      if (!supplier?._id) {
+        throw new Error(`Item ${i + 1}: supplier not found (${sid})`);
+      }
       items.push({
         name: item?.name,
         description: item?.description,
@@ -169,16 +214,33 @@ export class CreateFolioService implements FolioServiceInterface {
       if (!FolioDto?.current_folio) {
         const folioData: FolioCollectionInterface = {
           seller_userid: new ObjectId(seller_user?._id.toString()),
+          company_id: companyObjectId,
           folio,
           service_cost: [service_cost],
         };
-        const folio_created = await this.FolioRepository.create(folioData);
-        if (!folio_created?._id) throw new Error("Error creating service cost");
+        try {
+          const folio_created = await this.FolioRepository.create(folioData);
+          if (!folio_created?._id) throw new Error("Error creating folio");
+        } catch (e: any) {
+          if (e?.code === 11000) {
+            throw new Error(
+              "A folio with this code already exists (duplicate key)",
+            );
+          }
+          console.error("[CreateFolioService] Mongo create", e?.message, e);
+          throw e;
+        }
       }
 
       if (!folio) throw new Error("Error processing folio");
       return await this.FolioRepository.findOne(folio);
-    } catch (err) {
+    } catch (err: any) {
+      console.error("[CreateFolioService] failed", {
+        folio: FolioDto?.current_folio ?? "new",
+        hasItems: !!FolioDto?.items?.length,
+        message: err?.message,
+        code: err?.code,
+      });
       throw err;
     }
   }
@@ -254,6 +316,11 @@ export class CreateFolioService implements FolioServiceInterface {
         // ENCABEZADO
         // ================================
         const logoPath = path.join(process.cwd(), "timeforwarding.png");
+        if (!fs.existsSync(logoPath)) {
+          throw new Error(
+            `PDF: missing logo file at ${logoPath} (cwd: ${process.cwd()})`,
+          );
+        }
         const xImage = 40;
         const logoBoxSize = 84;
         const xText = xImage + logoBoxSize + 18;
@@ -552,12 +619,19 @@ export class CreateFolioService implements FolioServiceInterface {
 
           doc.font("Helvetica").fontSize(8);
 
+          const noteTextOptions = {
+            width: tableWidth,
+            lineGap: 2,
+          } as const;
+          const noteParagraphGap = 10;
+
           data.notes.forEach((note) => {
-            doc.text(note, marginLeft, y, {
-              width: tableWidth,
-              lineGap: 2,
-            });
-            y += 12;
+            const trimmed = note?.trim();
+            if (!trimmed) return;
+
+            const blockHeight = doc.heightOfString(trimmed, noteTextOptions);
+            doc.text(trimmed, marginLeft, y, noteTextOptions);
+            y += blockHeight + noteParagraphGap;
           });
         }
 

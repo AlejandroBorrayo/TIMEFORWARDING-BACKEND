@@ -16,10 +16,12 @@ export class FindAllNoteService implements FindAllNoteServiceInterface {
 
   async run(
     pagination: PageOptionsDto,
+    company_id?: string,
   ): Promise<PageMetaDto<NoteCollectionInterface>> {
     try {
       const [entities, total] = await this.noteRepository.findAll(
         pagination,
+        company_id,
       );
 
       return new PageMetaDto<NoteCollectionInterface>({

@@ -15,13 +15,14 @@ export class FindAllSupplierService implements FindAllSupplierServiceInterface {
 
   async run(
     pagination: PageOptionsDto,
-    search?: string
+    search?: string,
+    company_id?: string,
   ): Promise<PageMetaDto<SupplierCollectionInterface>> {
-    console.log("searchsearchsearch",search)
     try {
       const [entities, total] = await this.supplier.findAll(
         pagination,
-        search
+        search,
+        company_id,
       );
 
       return new PageMetaDto<SupplierCollectionInterface>({

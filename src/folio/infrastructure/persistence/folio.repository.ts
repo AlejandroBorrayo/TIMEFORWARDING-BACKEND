@@ -48,11 +48,16 @@ export class MongoFolioRepository implements FolioRepositoryInterface {
     no_quote?: number;
     customer?: string;
     seller_userid?: string;
+    company_id?: string;
     start_date?: string | Date;
     end_date?: string | Date;
     supplier?: string;
   }): Promise<[any[], number]> {
     const match: any = { deleted: false };
+
+    if (data?.company_id?.trim()) {
+      match.company_id = new Types.ObjectId(data.company_id.trim());
+    }
 
     if (data?.folio) {
       match.folio = { $regex: data.folio, $options: "i" };
@@ -128,6 +133,7 @@ export class MongoFolioRepository implements FolioRepositoryInterface {
     pipeline.push({
       $project: {
         folio: 1,
+        company_id: 1,
         quotes: 1,
         service_cost: 1,
         created_at: 1,
@@ -165,11 +171,16 @@ export class MongoFolioRepository implements FolioRepositoryInterface {
     no_quote?: number;
     customer?: string;
     seller_userid?: string;
+    company_id?: string;
     start_date?: string | Date;
     end_date?: string | Date;
     supplier?: string;
   }): Promise<any[]> {
     const match: any = { deleted: false };
+
+    if (data?.company_id?.trim()) {
+      match.company_id = new Types.ObjectId(data.company_id.trim());
+    }
 
     if (data?.folio) {
       match.folio = { $regex: data.folio, $options: "i" };
@@ -243,6 +254,7 @@ export class MongoFolioRepository implements FolioRepositoryInterface {
       {
         $project: {
           folio: 1,
+          company_id: 1,
           quotes: 1,
           service_cost: 1,
           created_at: 1,

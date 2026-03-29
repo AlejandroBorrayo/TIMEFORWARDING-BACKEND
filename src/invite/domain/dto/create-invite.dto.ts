@@ -15,5 +15,8 @@ export class CreateInviteDto {
   @IsNotEmpty()
   @IsString()
   role!: string;
-  
+
+  @IsNotEmpty()
+  @IsString()
+  company_id!: string;
 }

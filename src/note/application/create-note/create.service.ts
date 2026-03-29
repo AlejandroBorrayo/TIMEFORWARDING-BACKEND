@@ -11,9 +11,9 @@ export class CreateNoteService implements NoteServiceInterface {
     this.noteRepository = noteRepository;
   }
 
-  async run(note: string): Promise<any> {
+  async run(payload: { note: string; company_id: string }): Promise<any> {
     try {
-      return await this.noteRepository.create(note);
+      return await this.noteRepository.create(payload);
     } catch (err) {
       console.error("[TransactionService][run]", err);
       throw err;

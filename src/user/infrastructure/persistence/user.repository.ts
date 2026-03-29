@@ -16,10 +16,15 @@ export class MongoUserRepository implements UserRepositoryInterface {
 
   async findAll(
     pageOptions: PageOptionsDto,
-    search: string
+    search: string,
+    company_id?: string,
   ): Promise<[UserCollectionInterface[], number]> {
     // Construimos el filtro base
     const filter: any = { deleted: false };
+
+    if (company_id?.trim()) {
+      filter.company_id = new Types.ObjectId(company_id.trim());
+    }
 
     if (search && search.trim() !== "") {
       const regex = new RegExp(search.trim(), "i"); // i = case insensitive
@@ -42,15 +47,16 @@ export class MongoUserRepository implements UserRepositoryInterface {
     return [items, total];
   }
 
-  async findByEmailOrId(
-    _id?: string,
-    email?: string
-  ): Promise<UserCollectionInterface | null> {
-    const where: any = {};
-
-    if (email) where.email = email;
-    if (_id) where._id = new Types.ObjectId(_id);
-
+  async findByEmailOrId(userid?: string): Promise<UserCollectionInterface | null> {
+    if (!userid?.trim()) return null;
+    const raw = userid.trim();
+    const where: Record<string, unknown> = {};
+    // Un solo argumento: si es hex de 24 chars, buscar por _id; si no, por email.
+    if (/^[a-fA-F0-9]{24}$/.test(raw)) {
+      where._id = new Types.ObjectId(raw);
+    } else {
+      where.email = raw.toLowerCase();
+    }
     return UserModel.findOne(where).lean<UserCollectionInterface>().exec();
   }
 
@@ -86,12 +92,16 @@ export class MongoUserRepository implements UserRepositoryInterface {
   async create(
     user: Partial<UserCollectionInterface>
   ): Promise<UserCollectionInterface> {
-    const newUser = new UserModel({
+    const payload: Record<string, unknown> = {
       ...user,
       created_at: new Date(),
       updated_at: new Date(),
       deleted: false,
-    });
+    };
+    if (user.company_id) {
+      payload.company_id = new Types.ObjectId(user.company_id);
+    }
+    const newUser = new UserModel(payload);
     const saved = await newUser.save();
     return saved.toObject<UserCollectionInterface>();
   }
