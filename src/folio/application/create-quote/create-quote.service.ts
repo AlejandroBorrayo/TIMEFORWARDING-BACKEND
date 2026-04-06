@@ -321,12 +321,12 @@ export class CreateQuoteService implements QuoteServiceInterface {
 
         if (data?.customer?.company || data?.customer?.contact_name) {
           if (data?.customer?.company) {
-            drawInlineField("Nombre/Razon social", data.customer.company, currentY);
+            drawInlineField("Nombre/Razón social", data.customer.company, currentY);
             currentY += 22;
           }
 
           if (data?.customer?.contact_email) {
-            drawInlineField("Correo Electronico", data.customer.contact_email, currentY);
+            drawInlineField("Correo Electrónico", data.customer.contact_email, currentY);
             currentY += 22;
           }
 
@@ -342,7 +342,7 @@ export class CreateQuoteService implements QuoteServiceInterface {
         drawInlineField("Folio", String(data.folio || "-"), infoY);
         infoY += infoRowGap;
 
-        drawInlineField("No. Cotizacion", data.no_quote || "-", infoY);
+        drawInlineField("No. Cotización", data.no_quote || "-", infoY);
         infoY += infoRowGap;
 
         drawInlineField("Fecha", formatDate(data.created_at) || "-", infoY);
