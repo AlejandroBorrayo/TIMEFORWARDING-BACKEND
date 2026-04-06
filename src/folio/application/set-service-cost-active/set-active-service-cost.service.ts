@@ -22,6 +22,9 @@ export class SetServiceCostActiveService
     if (!current_folio?._id) {
       throw new Error("Folio no encontrado");
     }
+    if (current_folio.disabled === true) {
+      throw new Error("El folio está desactivado");
+    }
     try {
       await this.FolioRepository.setActiveServiceCost(
         current_folio._id.toString(),

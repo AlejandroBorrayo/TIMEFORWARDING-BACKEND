@@ -119,6 +119,9 @@ export class CreateFolioService implements FolioServiceInterface {
       if (!current_folio?._id) {
         throw new Error("Folio not found");
       }
+      if (current_folio.disabled === true) {
+        throw new Error("El folio está desactivado");
+      }
       const existingCompany = current_folio.company_id?.toString?.();
       if (
         existingCompany &&
@@ -257,6 +260,11 @@ export class CreateFolioService implements FolioServiceInterface {
       try {
         const doc = new PDFDocument({ margin: 40 });
 
+        const fontsDir = path.join(process.cwd(), "fonts");
+        doc.registerFont("Montserrat", path.join(fontsDir, "Montserrat-Regular.ttf"));
+        doc.registerFont("Montserrat-Bold", path.join(fontsDir, "Montserrat-Bold.ttf"));
+        doc.registerFont("Montserrat-SemiBold", path.join(fontsDir, "Montserrat-SemiBold.ttf"));
+
         // Capturar el PDF en memoria
         const buffers: Buffer[] = [];
         doc.on("data", buffers.push.bind(buffers));
@@ -272,6 +280,11 @@ export class CreateFolioService implements FolioServiceInterface {
             minimumFractionDigits: 2,
           }).format(value || 0);
         };
+        const formatAmount = (value: number) =>
+          new Intl.NumberFormat("es-MX", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }).format(value || 0);
         const formatDate = (value?: Date) => {
           if (!value) return "";
           const date = new Date(value);
@@ -321,9 +334,11 @@ export class CreateFolioService implements FolioServiceInterface {
             `PDF: missing logo file at ${logoPath} (cwd: ${process.cwd()})`,
           );
         }
-        const xImage = 40;
         const logoBoxSize = 84;
-        const xText = xImage + logoBoxSize + 18;
+        const textBlockWidth = 320;
+        const headerGap = 18;
+        const xImage = doc.page.margins.left;
+        const xText = xImage + logoBoxSize + headerGap;
         const startY = doc.y;
 
         doc.image(logoPath, xImage, startY, {
@@ -332,8 +347,10 @@ export class CreateFolioService implements FolioServiceInterface {
           valign: "center",
         });
 
-        doc.fontSize(20).fillColor("#02101d").font("Helvetica").text("Time Forwarding", xText, startY + 2, {
+        const textStartY = startY + 8;
+        doc.fontSize(20).fillColor("#02101d").font("Montserrat-Bold").text("Time Forwarding", xText, textStartY, {
           lineGap: 6,
+          width: textBlockWidth,
         });
 
         const lineGap = 2;
@@ -345,12 +362,8 @@ export class CreateFolioService implements FolioServiceInterface {
             "235 Periférico Boulevard Manuel Ávila Camacho, Ciudad de México",
             xText,
             undefined,
-            { lineGap }
-          )
-          .text("contabilidad@timeforwarding.com.mx", xText, undefined, {
-            lineGap,
-          })
-          .text("5552542235", xText, undefined, { lineGap });
+            { lineGap, width: textBlockWidth }
+          );
 
         const marginLeft = doc.page.margins.left;
         const marginRight = doc.page.margins.right;
@@ -359,21 +372,19 @@ export class CreateFolioService implements FolioServiceInterface {
           const safeValue = value?.trim() ? value : "-";
           const labelText = `${label}:`;
 
-          doc.fontSize(11).font("Helvetica-Bold").fillColor("#111827");
+          doc.fontSize(11).font("Montserrat-Bold").fillColor("#111827");
           doc.text(labelText, marginLeft, y, { lineBreak: false });
 
           const labelWidth = doc.widthOfString(labelText);
           doc
-            .font("Helvetica")
+            .font("Montserrat")
             .text(` ${safeValue}`, marginLeft + labelWidth, y, {
               width: Math.max(contentWidth - labelWidth, 80),
               align: "left",
             });
         };
 
-        // Bloque como en la page: borde arriba/abajo y labels a la izquierda
-        doc.moveDown(2.8);
-        const infoTop = doc.y;
+        const infoTop = Math.max(doc.y + 20, startY + logoBoxSize + 20);
         const infoPaddingY = 24;
         const infoStartY = infoTop + infoPaddingY;
         const infoRowGap = 20;
@@ -441,7 +452,7 @@ export class CreateFolioService implements FolioServiceInterface {
 
         // HEADER
         doc.rect(marginLeft, tableTop, tableWidth, headerHeight).fill("#02101d");
-        doc.fillColor("#FFFFFF").fontSize(9).font("Helvetica");
+        doc.fillColor("#FFFFFF").fontSize(9).font("Montserrat-Bold");
         columns.forEach((column) => {
           doc.text(column.label, xMap[column.key], tableTop + 8, {
             width: wMap[column.key],
@@ -449,7 +460,7 @@ export class CreateFolioService implements FolioServiceInterface {
           });
         });
 
-        doc.fillColor("#000000").font("Helvetica");
+        doc.fillColor("#000000").font("Montserrat");
         let y = tableTop + headerHeight;
 
         // ================================
@@ -462,35 +473,45 @@ export class CreateFolioService implements FolioServiceInterface {
             width: wMap.product - 16,
             align: "center",
           } as const;
-          const supplierOptions = {
-            width: wMap.supplier,
-            align: "center",
-          } as const;
+          const supplierHPad = 4;
+          const supplierTextOptions = {
+            width: Math.max(wMap.supplier - supplierHPad * 2, 24),
+            align: "center" as const,
+          };
 
           const productName = item.name || "-";
           const nameHeight = doc.heightOfString(productName, descOptions);
 
           let descriptionHeight = 0;
           if (item.description) {
-            doc.font("Helvetica").fontSize(9);
+            doc.font("Montserrat").fontSize(9);
             descriptionHeight = doc.heightOfString(
               item.description,
               descOptions
             );
           }
 
+          const supplierName = item?.supplier?.name || "-";
+          doc.font("Montserrat").fontSize(8.5);
+          const supplierHeight = doc.heightOfString(
+            supplierName,
+            supplierTextOptions,
+          );
+
           let rowHeight = nameHeight + descriptionHeight + 26;
-          if (rowHeight < minRowHeight) rowHeight = minRowHeight;
+          rowHeight = Math.max(
+            rowHeight,
+            supplierHeight + 12,
+            minRowHeight,
+          );
 
           if (index % 2 === 0) doc.rect(marginLeft, y, tableWidth, rowHeight).fill("#f4f6f9");
           doc.fillColor("#000");
 
           doc
-            .font("Helvetica-Bold")
+            .font("Montserrat-Bold")
             .fontSize(9)
             .text(productName, xMap.product + 8, y + 8, descOptions);
-
-          const supplierName = item?.supplier?.name || "-";
 
           const currency = item.currency || data.currency;
           const quantity = Number(item.quantity || 0);
@@ -510,11 +531,22 @@ export class CreateFolioService implements FolioServiceInterface {
 
           const rowCenterY = y + rowHeight / 2;
           const centeredY = rowCenterY - 6;
+          const twoLineY = rowCenterY - 11;
+          const supplierY = y + (rowHeight - supplierHeight) / 2;
 
           doc
-            .font("Helvetica")
+            .font("Montserrat")
             .fontSize(8.5)
-            .text(supplierName, xMap.supplier, centeredY, supplierOptions)
+            .text(
+              supplierName,
+              xMap.supplier + supplierHPad,
+              supplierY,
+              supplierTextOptions,
+            );
+
+          doc
+            .font("Montserrat")
+            .fontSize(8.5)
             .text(currency, xMap.currency, centeredY, {
               width: wMap.currency,
               align: "center",
@@ -530,22 +562,45 @@ export class CreateFolioService implements FolioServiceInterface {
             .text(taxName, xMap.tax, centeredY, {
               width: wMap.tax,
               align: "center",
-            })
-            .text(formatCurrency(totalByItem, currency), xMap.total, centeredY, {
-              width: wMap.total,
-              align: "center",
             });
 
-          if (hasUSDItem) {
-            doc.text(formatCurrency(totalByItemUSD, "USD"), xMap.total_usd, centeredY, {
-              width: wMap.total_usd,
+          doc
+            .font("Montserrat-Bold")
+            .fontSize(8.5)
+            .text(formatAmount(totalByItem), xMap.total, twoLineY, {
+              width: wMap.total,
               align: "center",
-            });
+            })
+            .font("Montserrat")
+            .fontSize(7)
+            .fillColor("#555555")
+            .text(currency, xMap.total, twoLineY + 13, {
+              width: wMap.total,
+              align: "center",
+            })
+            .fillColor("#000");
+
+          if (hasUSDItem) {
+            doc
+              .font("Montserrat-Bold")
+              .fontSize(8.5)
+              .text(formatAmount(totalByItemUSD), xMap.total_usd, twoLineY, {
+                width: wMap.total_usd,
+                align: "center",
+              })
+              .font("Montserrat")
+              .fontSize(7)
+              .fillColor("#555555")
+              .text("USD", xMap.total_usd, twoLineY + 13, {
+                width: wMap.total_usd,
+                align: "center",
+              })
+              .fillColor("#000");
           }
 
           const cursorY = y + 8 + nameHeight + 2;
           if (item.description) {
-            doc.fontSize(9).font("Helvetica").fillColor("#6e6e6e");
+            doc.fontSize(9).font("Montserrat").fillColor("#6e6e6e");
             doc.text(item.description, xMap.product + 8, cursorY, descOptions);
             doc.fillColor("#000");
           }
@@ -572,7 +627,7 @@ export class CreateFolioService implements FolioServiceInterface {
         const blockX = marginLeft + tableWidth - blockWidth;
         const valueX = blockX + summaryLabelWidth + summaryGap;
 
-        doc.font("Helvetica").fontSize(11).fillColor("#4b5563");
+        doc.font("Montserrat").fontSize(11).fillColor("#4b5563");
         doc.text("Subtotal", blockX, y, { width: summaryLabelWidth, align: "right" });
         doc.text(formatCurrency(summarySubtotal, summaryCurrency), valueX, y, {
           width: summaryValueWidth,
@@ -594,7 +649,7 @@ export class CreateFolioService implements FolioServiceInterface {
 
         y += 20;
 
-        doc.font("Helvetica-Bold").fontSize(15).fillColor("#111827");
+        doc.font("Montserrat-Bold").fontSize(15).fillColor("#111827");
         doc.text("Total", blockX, y, { width: summaryLabelWidth, align: "right" });
         doc.text(formatCurrency(summaryTotal, summaryCurrency), valueX, y, {
           width: summaryValueWidth,
@@ -617,13 +672,13 @@ export class CreateFolioService implements FolioServiceInterface {
           doc.fontSize(10).text("Notas:", marginLeft, y);
           y += 14;
 
-          doc.font("Helvetica").fontSize(8);
+          doc.font("Montserrat").fontSize(8);
 
           const noteTextOptions = {
             width: tableWidth,
-            lineGap: 2,
+            lineGap: 5,
           } as const;
-          const noteParagraphGap = 10;
+          const noteParagraphGap = 14;
 
           data.notes.forEach((note) => {
             const trimmed = note?.trim();
@@ -719,8 +774,25 @@ export class CreateFolioService implements FolioServiceInterface {
     }
 
     const fileCode = uploadedFile.file_code;
+    console.log("[FileLu] file_code:", fileCode);
 
-    // 4) Obtener enlace directo
+    // 4) Obtener URL permanente via file/info
+    const infoRes = await fetch(
+      `https://filelu.com/api/file/info?key=${apikey}&file_code=${fileCode}`,
+      { method: "GET", headers: { Accept: "application/json" } }
+    );
+    const infoJson: any = await infoRes.json();
+    console.log("[FileLu] file/info:", JSON.stringify(infoJson));
+
+    if (infoJson.status === 200) {
+      const fileUrl =
+        infoJson.result?.file_url ??
+        infoJson.result?.url ??
+        infoJson.result?.direct_link;
+      if (fileUrl) return fileUrl as string;
+    }
+
+    // Fallback: direct_link
     const directLinkRes = await fetch(
       "https://filelu.com/api/file/direct_link",
       {
@@ -729,13 +801,11 @@ export class CreateFolioService implements FolioServiceInterface {
         body: `file_code=${fileCode}&key=${apikey}`,
       }
     );
-
     const linkJson: any = await directLinkRes.json();
+    console.log("[FileLu] direct_link:", JSON.stringify(linkJson));
+
     if (linkJson.status !== 200 || !linkJson.result?.url) {
-      console.log("directLinkRes:", linkJson);
-      throw new Error(
-        "FileLu: No se pudo obtener el enlace del archivo subido"
-      );
+      throw new Error("FileLu: No se pudo obtener el enlace del archivo subido");
     }
     return linkJson.result.url;
   }

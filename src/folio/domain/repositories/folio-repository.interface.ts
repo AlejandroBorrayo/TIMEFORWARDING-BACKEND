@@ -46,6 +46,11 @@ export interface FolioRepositoryInterface {
     noQuote: string
   ): Promise<FolioCollectionInterface | null>;
 
+  setFolioDisabled(
+    folioId: string,
+    disabled: boolean
+  ): Promise<FolioCollectionInterface | null>;
+
   findSupplierHistory(supplierId: string): Promise<any[]>;
   paymentSupplier(data: {
     payment: number;

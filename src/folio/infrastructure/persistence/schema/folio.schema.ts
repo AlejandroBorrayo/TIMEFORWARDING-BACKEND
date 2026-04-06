@@ -95,6 +95,7 @@ export interface FolioDocument extends Document {
   folio: string;
   service_cost: ServiceCostInterface[];
   deleted: boolean;
+  disabled?: boolean;
   created_at?: Date;
   updated_at?: Date;
 }
@@ -246,6 +247,11 @@ const FolioSchema = new Schema<FolioDocument>(
     deleted: {
       type: Boolean,
       default: false,
+    },
+    disabled: {
+      type: Boolean,
+      default: false,
+      index: true,
     },
   },
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } },

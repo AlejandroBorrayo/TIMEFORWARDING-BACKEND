@@ -54,6 +54,7 @@ import { PaymentCustomerService } from "./folio/application/payment-customer/pay
 import { CancelPaymentCustomerService } from "./folio/application/cancel-payment-customer/cancel-payment-customer.service";
 import { FindCustomerHistoryService } from "./folio/application/find-customer-history/find-customer-history.service";
 import { SendFolioReportCsvService } from "./folio/application/send-folio-report-csv/send-folio-report-csv.service";
+import { SetFolioDisabledService } from "./folio/application/set-folio-disabled/set-folio-disabled.service";
 
 //CUSTOMERS
 import { CreateCustomerService } from "./customer/application/create-customer/create-customer.service";
@@ -112,6 +113,7 @@ import { PaymentCustomerController } from "./folio/controllers/payment-customer/
 import { CancelPaymentCustomerController } from "./folio/controllers/cancel-payment-customer/cancel-payment-customer.controller";
 import { findCustomerHistoryController } from "./folio/controllers/find-customer-history/find-customer-history.controller";
 import { sendFolioReportCsvController } from "./folio/controllers/send-folio-report-csv/send-folio-report-csv.controller";
+import { setFolioDisabledController } from "./folio/controllers/set-folio-disabled/set-folio-disabled.controller";
 
 //CUSTOMER
 import { findAllCustomerController } from "./customer/controllers/find-all-customer/find-all-customer.controller";
@@ -237,6 +239,7 @@ async function bootstrap() {
   );
   const findCustomerHistoryService = new FindCustomerHistoryService(FolioRepo);
   const sendFolioReportCsvService = new SendFolioReportCsvService(FolioRepo);
+  const setFolioDisabledService = new SetFolioDisabledService(FolioRepo);
 
   const createCustomerService = new CreateCustomerService(
     userRepo,
@@ -326,6 +329,7 @@ async function bootstrap() {
   const sendFolioReportCsv = sendFolioReportCsvController(
     sendFolioReportCsvService
   );
+  const setFolioDisabled = setFolioDisabledController(setFolioDisabledService);
 
   const findAllCustomer = findAllCustomerController(findAllCustomerService);
   const createCustomer = createCustomerController(createCustomerService);
@@ -382,6 +386,7 @@ async function bootstrap() {
   app.get("/folio/:id", findFolio.run);
   app.put("/folio/service-cost-active", setServiceCostActive.run);
   app.put("/folio/quote-active", setQuoteActive.run);
+  app.put("/folio/disabled", setFolioDisabled.run);
   app.post("/quote", createQuote.run);
   app.post("/customer", createCustomer.run);
   app.post("/customer/all", findAllCustomer.run);

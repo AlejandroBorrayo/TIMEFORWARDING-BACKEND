@@ -7,6 +7,7 @@ export interface FolioCollectionInterface {
   folio: string;
   service_cost: ServiceCostInterface[];
   deleted?: boolean;
+  disabled?: boolean;
   created_at?: Date;
   updated_at?: Date;
 }

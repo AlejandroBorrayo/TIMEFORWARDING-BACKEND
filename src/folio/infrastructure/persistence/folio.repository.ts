@@ -53,6 +53,7 @@ export class MongoFolioRepository implements FolioRepositoryInterface {
     end_date?: string | Date;
     supplier?: string;
   }): Promise<[any[], number]> {
+    // Incluir folios desactivados para que la UI pueda listarlos y reactivarlos.
     const match: any = { deleted: false };
 
     if (data?.company_id?.trim()) {
@@ -134,6 +135,7 @@ export class MongoFolioRepository implements FolioRepositoryInterface {
       $project: {
         folio: 1,
         company_id: 1,
+        disabled: 1,
         quotes: 1,
         service_cost: 1,
         created_at: 1,
@@ -176,7 +178,7 @@ export class MongoFolioRepository implements FolioRepositoryInterface {
     end_date?: string | Date;
     supplier?: string;
   }): Promise<any[]> {
-    const match: any = { deleted: false };
+    const match: any = { deleted: false, disabled: { $ne: true } };
 
     if (data?.company_id?.trim()) {
       match.company_id = new Types.ObjectId(data.company_id.trim());
@@ -406,11 +408,25 @@ export class MongoFolioRepository implements FolioRepositoryInterface {
       .exec();
   }
 
+  async setFolioDisabled(
+    folioId: string,
+    disabled: boolean,
+  ): Promise<FolioCollectionInterface | null> {
+    return FolioModel.findOneAndUpdate(
+      { _id: new Types.ObjectId(folioId), deleted: false },
+      { $set: { disabled, updated_at: new Date() } },
+      { new: true },
+    )
+      .lean<FolioCollectionInterface>()
+      .exec();
+  }
+
   async findSupplierHistory(supplierId: string): Promise<any[]> {
     return FolioModel.aggregate([
       {
         $match: {
           deleted: false,
+          disabled: { $ne: true },
         },
       },
 
@@ -452,6 +468,7 @@ export class MongoFolioRepository implements FolioRepositoryInterface {
         $match: {
           folio,
           deleted: false,
+          disabled: { $ne: true },
         },
       },
 
@@ -592,7 +609,7 @@ export class MongoFolioRepository implements FolioRepositoryInterface {
   }
 
   async findActiveQuotesByCustomer(customerId: string, sellerId?: string): Promise<any[]> {
-    const match: any = { deleted: false };
+    const match: any = { deleted: false, disabled: { $ne: true } };
     if (sellerId) {
       match.seller_userid = new Types.ObjectId(sellerId);
     }
