@@ -302,6 +302,7 @@ export class CreateQuoteService implements QuoteServiceInterface {
         const marginLeft = doc.page.margins.left;
         const marginRight = doc.page.margins.right;
         const contentWidth = doc.page.width - marginLeft - marginRight;
+        const pageBottomY = () => doc.page.height - doc.page.margins.bottom - 8;
         const drawInlineField = (label: string, value: string, y: number) => {
           const safeValue = value?.trim() ? value : "-";
           const labelText = `${label}:`;
@@ -397,16 +398,19 @@ export class CreateQuoteService implements QuoteServiceInterface {
           currentX += wMap[column.key];
         });
 
-        doc.rect(marginLeft, tableTop, tableWidth, headerHeight).fill("#02101d");
-        doc.fillColor("#FFFFFF").fontSize(9).font("Montserrat-Bold");
-        columns.forEach((column) => {
-          doc.text(column.label, xMap[column.key], tableTop + 8, {
-            width: wMap[column.key],
-            align: "center",
+        const drawTableHeader = (headerY: number) => {
+          doc.rect(marginLeft, headerY, tableWidth, headerHeight).fill("#02101d");
+          doc.fillColor("#FFFFFF").fontSize(9).font("Montserrat-Bold");
+          columns.forEach((column) => {
+            doc.text(column.label, xMap[column.key], headerY + 8, {
+              width: wMap[column.key],
+              align: "center",
+            });
           });
-        });
+          doc.fillColor("#000000").font("Montserrat");
+        };
 
-        doc.fillColor("#000000").font("Montserrat");
+        drawTableHeader(tableTop);
         let y = tableTop + headerHeight;
 
         data.items.forEach((item, index) => {
@@ -427,16 +431,6 @@ export class CreateQuoteService implements QuoteServiceInterface {
             );
           }
 
-          let rowHeight = nameHeight + descriptionHeight + 26;
-          if (rowHeight < minRowHeight) rowHeight = minRowHeight;
-          if (index % 2 === 0) doc.rect(marginLeft, y, tableWidth, rowHeight).fill("#f4f6f9");
-          doc.fillColor("#000");
-
-          doc
-            .font("Montserrat-Bold")
-            .fontSize(9)
-            .text(productName, xMap.product + 8, y + 8, descOptions);
-
           const currency = item.currency || data.currency;
           const quantity = Number(item.quantity || 0);
           const price = Number(item.amount || 0);
@@ -451,6 +445,31 @@ export class CreateQuoteService implements QuoteServiceInterface {
             item?.tax?.name && item.tax.name !== "sin impuesto"
               ? `${item.tax.name} (${taxAmount}%)`
               : "Sin impuesto";
+
+          doc.font("Montserrat").fontSize(8.5);
+          const taxBlockHeight = doc.heightOfString(taxName, {
+            width: wMap.tax,
+            align: "center",
+          });
+
+          let rowHeight = nameHeight + descriptionHeight + 26;
+          if (rowHeight < minRowHeight) rowHeight = minRowHeight;
+          rowHeight = Math.max(rowHeight, taxBlockHeight + 18, 40);
+
+          if (y + rowHeight > pageBottomY()) {
+            doc.addPage();
+            y = doc.page.margins.top;
+            drawTableHeader(y);
+            y += headerHeight;
+          }
+
+          if (index % 2 === 0) doc.rect(marginLeft, y, tableWidth, rowHeight).fill("#f4f6f9");
+          doc.fillColor("#000");
+
+          doc
+            .font("Montserrat-Bold")
+            .fontSize(9)
+            .text(productName, xMap.product + 8, y + 8, descOptions);
 
           const rowCenterY = y + rowHeight / 2;
           const centeredY = rowCenterY - 6;
@@ -534,16 +553,93 @@ export class CreateQuoteService implements QuoteServiceInterface {
         const blockX = marginLeft + tableWidth - blockWidth;
         const valueX = blockX + summaryLabelWidth + summaryGap;
 
+        const visibleSummaryTaxLines = summaryTaxes.filter(
+          (taxLine) => taxLine?.name && taxLine?.amount,
+        );
+
+        const measureSummaryBlockHeight = (): number => {
+          doc.fillColor("#4b5563");
+          doc.font("Montserrat").fontSize(11);
+          const subRowH = Math.max(
+            doc.heightOfString("Subtotal", {
+              width: summaryLabelWidth,
+              align: "right",
+            }),
+            doc.heightOfString(
+              formatCurrency(summarySubtotal, summaryCurrency),
+              { width: summaryValueWidth, align: "right" },
+            ),
+            18,
+          );
+          let h = subRowH + 4;
+          for (const taxLine of visibleSummaryTaxLines) {
+            h += Math.max(
+              doc.heightOfString(`${taxLine.name}`, {
+                width: summaryLabelWidth,
+                align: "right",
+              }),
+              doc.heightOfString(
+                formatCurrency(taxLine.amount, summaryCurrency),
+                { width: summaryValueWidth, align: "right" },
+              ),
+              18,
+            );
+            h += 2;
+          }
+          h += 16;
+          doc.font("Montserrat-Bold").fontSize(15).fillColor("#111827");
+          h += Math.max(
+            doc.heightOfString("Total", {
+              width: summaryLabelWidth,
+              align: "right",
+            }),
+            doc.heightOfString(
+              formatCurrency(summaryTotal, summaryCurrency),
+              { width: summaryValueWidth, align: "right" },
+            ),
+            22,
+          );
+          doc.font("Montserrat").fontSize(11).fillColor("#4b5563");
+          return h + 14;
+        };
+
+        if (y + measureSummaryBlockHeight() > pageBottomY()) {
+          doc.addPage();
+          y = doc.page.margins.top;
+          doc.fillColor("#000000").font("Montserrat");
+        }
+
         doc.font("Montserrat").fontSize(11).fillColor("#4b5563");
+        const subRowDrawH = Math.max(
+          doc.heightOfString("Subtotal", {
+            width: summaryLabelWidth,
+            align: "right",
+          }),
+          doc.heightOfString(
+            formatCurrency(summarySubtotal, summaryCurrency),
+            { width: summaryValueWidth, align: "right" },
+          ),
+          18,
+        );
         doc.text("Subtotal", blockX, y, { width: summaryLabelWidth, align: "right" });
         doc.text(formatCurrency(summarySubtotal, summaryCurrency), valueX, y, {
           width: summaryValueWidth,
           align: "right",
         });
+        y += subRowDrawH + 4;
 
         summaryTaxes.forEach((taxLine) => {
           if (!taxLine?.name || !taxLine?.amount) return;
-          y += 18;
+          doc.font("Montserrat").fontSize(11).fillColor("#4b5563");
+          const taxNameH = doc.heightOfString(`${taxLine.name}`, {
+            width: summaryLabelWidth,
+            align: "right",
+          });
+          const taxValH = doc.heightOfString(
+            formatCurrency(taxLine.amount, summaryCurrency),
+            { width: summaryValueWidth, align: "right" },
+          );
+          const taxRowH = Math.max(taxNameH, taxValH, 18);
           doc.text(`${taxLine.name}`, blockX, y, {
             width: summaryLabelWidth,
             align: "right",
@@ -552,18 +648,57 @@ export class CreateQuoteService implements QuoteServiceInterface {
             width: summaryValueWidth,
             align: "right",
           });
+          y += taxRowH + 2;
         });
 
-        y += 20;
+        y += 16;
         doc.font("Montserrat-Bold").fontSize(15).fillColor("#111827");
-        doc.text("Total", blockX, y, { width: summaryLabelWidth, align: "right" });
-        doc.text(formatCurrency(summaryTotal, summaryCurrency), valueX, y, {
+        const totalValueStr = formatCurrency(summaryTotal, summaryCurrency);
+        const totalLabelH = doc.heightOfString("Total", {
+          width: summaryLabelWidth,
+          align: "right",
+        });
+        const totalValueH = doc.heightOfString(totalValueStr, {
           width: summaryValueWidth,
           align: "right",
         });
+        const totalRowAdvance = Math.min(
+          Math.max(totalLabelH, totalValueH, 18),
+          26,
+        );
+
+        doc.text("Total", blockX, y, {
+          width: summaryLabelWidth,
+          align: "right",
+          lineBreak: false,
+        });
+        doc.text(totalValueStr, valueX, y, {
+          width: summaryValueWidth,
+          align: "right",
+          lineBreak: false,
+        });
+
+        const marginBelowTotalPx = 32;
+        y += totalRowAdvance + marginBelowTotalPx;
+        doc.x = marginLeft;
+        doc.y = y;
 
         if (data?.notes?.length) {
-          y += 46;
+          const noteTextOptions = {
+            width: tableWidth,
+            lineGap: 4,
+          } as const;
+          /** Espacio entre el final de una nota y el inicio de la siguiente (pt ≈ px en PDF). */
+          const noteGapAfterBlock = 24;
+          const minSpaceForNotesHeader = 2 + 8 + 14 + 8;
+
+          if (y + minSpaceForNotesHeader > pageBottomY()) {
+            doc.addPage();
+            y = doc.page.margins.top + 12;
+            doc.fillColor("#000000").font("Montserrat");
+            doc.x = marginLeft;
+            doc.y = y;
+          }
 
           doc
             .moveTo(marginLeft, y)
@@ -571,25 +706,31 @@ export class CreateQuoteService implements QuoteServiceInterface {
             .strokeColor("#bdbdbd")
             .stroke();
 
-          y += 20;
-          doc.fontSize(10).text("Notas:", marginLeft, y);
+          y += 8;
+          doc.font("Montserrat").fontSize(10).fillColor("#111827");
+          doc.text("Notas:", marginLeft, y, { lineBreak: false });
           y += 14;
 
-          doc.font("Montserrat").fontSize(8);
-
-          const noteTextOptions = {
-            width: tableWidth,
-            lineGap: 5,
-          } as const;
-          const noteParagraphGap = 14;
+          doc.font("Montserrat").fontSize(8).fillColor("#000000");
 
           data.notes.forEach((note) => {
             const trimmed = note?.trim();
             if (!trimmed) return;
 
-            const blockHeight = doc.heightOfString(trimmed, noteTextOptions);
+            // No usar heightOfString completo para el salto: una nota larga “cabe” empezando
+            // en esta página y continuando abajo; el chequeo anterior dejaba hueco y mandaba
+            // la siguiente nota a página nueva sin motivo.
+            const minSpaceToStartNote = 22;
+            if (y + minSpaceToStartNote > pageBottomY()) {
+              doc.addPage();
+              y = doc.page.margins.top + 12;
+              doc.fillColor("#000000").font("Montserrat");
+              doc.x = marginLeft;
+              doc.y = y;
+            }
             doc.text(trimmed, marginLeft, y, noteTextOptions);
-            y += blockHeight + noteParagraphGap;
+            y = doc.y + noteGapAfterBlock;
+            doc.y = y;
           });
         }
 
